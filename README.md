@@ -1,2 +1,13 @@
-# jobby
-“A simple TaskRabbit-style job marketplace prototype (bilingual EN/IS)”  “Prototype app for connecting people who need small tasks with helpers”  “Jobby – lightweight marketplace for chores, babysitting, moving, and more”
+# Jobby
+
+A simple TaskRabbit-style job marketplace prototype.
+
+## Features
+
+- Browse existing jobs
+- Post new jobs
+- Make offers (a 5% platform fee is added on top of the offer amount)
+- View jobs you have posted under "My Jobs"
+
+Open `tasker-lite-new/index.html` directly in your browser to try it out. All data is stored in `localStorage` for demonstration purposes.
+

@@ -6,19 +6,139 @@
   <title>Jobby – Tasker Lite</title>
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0B0C10">
+  <style>
+    body { background:#0B0C10; color:#F6F7F9; font-family:sans-serif; padding:20px; }
+    input, textarea, button { margin:4px 0; }
+    section { margin-bottom:20px; }
+    .job { border:1px solid #444; padding:10px; margin-bottom:10px; }
+    .offers { margin-left:20px; }
+  </style>
 </head>
-<body style="background:#0B0C10;color:#F6F7F9;font-family:sans-serif;padding:20px">
+<body>
   <h1>Jobby Prototype</h1>
-  <p>This is a lightweight TaskRabbit-style prototype. You can:</p>
-  <ul>
-    <li>Browse jobs</li>
-    <li>Post a job</li>
-    <li>Make offers (5% fee is calculated)</li>
-    <li>Switch language (EN/IS)</li>
-  </ul>
-  <p>Open this file directly in your browser to test.</p>
+
+  <section id="user-section">
+    <h2>Set your name</h2>
+    <input id="name-input" placeholder="Your name">
+    <button id="set-name-btn">Set Name</button>
+  </section>
+
+  <section id="post-job">
+    <h2>Post a Job</h2>
+    <input id="job-title" placeholder="Title">
+    <textarea id="job-desc" placeholder="Description"></textarea>
+    <input id="job-price" type="number" placeholder="Budget">
+    <button id="post-job-btn">Post Job</button>
+  </section>
+
+  <section id="jobs">
+    <h2>Job List</h2>
+    <div id="jobs-list"></div>
+  </section>
+
+  <section id="my-jobs">
+    <h2>My Jobs</h2>
+    <div id="my-jobs-list"></div>
+  </section>
+
   <script>
-    alert("Jobby prototype loaded! Here you will later add jobs, offers, and chat.");
+    const JOBS_KEY = 'jobby_jobs';
+    const USER_KEY = 'jobby_user';
+    let jobs = JSON.parse(localStorage.getItem(JOBS_KEY)) || [];
+    let currentUser = localStorage.getItem(USER_KEY) || '';
+
+    function saveJobs(){
+      localStorage.setItem(JOBS_KEY, JSON.stringify(jobs));
+    }
+
+    function render(){
+      const userSection = document.getElementById('user-section');
+      if(currentUser){
+        userSection.innerHTML = '<p>Logged in as <strong>' + currentUser + '</strong></p>';
+      } else {
+        userSection.innerHTML = '<h2>Set your name</h2>'+
+          '<input id="name-input" placeholder="Your name">'+
+          '<button id="set-name-btn">Set Name</button>';
+        document.getElementById('set-name-btn').onclick = () => {
+          const name = document.getElementById('name-input').value.trim();
+          if(name){ currentUser = name; localStorage.setItem(USER_KEY, name); render(); }
+        };
+      }
+
+      const jobsList = document.getElementById('jobs-list');
+      const myJobsList = document.getElementById('my-jobs-list');
+      jobsList.innerHTML = '';
+      myJobsList.innerHTML = '';
+      jobs.forEach(job => {
+        const jobDiv = document.createElement('div');
+        jobDiv.className = 'job';
+        jobDiv.innerHTML = '<h3>'+job.title+'</h3><p>'+job.description+'</p><p>Budget: '+job.price+'</p>';
+        const offersDiv = document.createElement('div');
+        offersDiv.className = 'offers';
+        job.offers.forEach(o => {
+          const total = (o.amount * 1.05).toFixed(2);
+          const p = document.createElement('p');
+          p.textContent = o.user + ' offered ' + o.amount + ' (total with fee ' + total + ')';
+          offersDiv.appendChild(p);
+        });
+        if(currentUser){
+          const offerInput = document.createElement('input');
+          offerInput.type = 'number';
+          offerInput.placeholder = 'Your offer';
+          const offerBtn = document.createElement('button');
+          offerBtn.textContent = 'Make Offer';
+          offerBtn.onclick = () => {
+            const amount = parseFloat(offerInput.value);
+            if(!isNaN(amount)){
+              job.offers.push({ user: currentUser, amount });
+              saveJobs();
+              render();
+            }
+          };
+          offersDiv.appendChild(offerInput);
+          offersDiv.appendChild(offerBtn);
+          const feeInfo = document.createElement('p');
+          feeInfo.textContent = '5% platform fee applies';
+          offersDiv.appendChild(feeInfo);
+        }
+        jobDiv.appendChild(offersDiv);
+        jobsList.appendChild(jobDiv);
+
+        if(job.postedBy === currentUser){
+          const myJobDiv = document.createElement('div');
+          myJobDiv.className = 'job';
+          myJobDiv.innerHTML = '<h3>'+job.title+'</h3><p>'+job.description+'</p><p>Budget: '+job.price+'</p>';
+          const myOffers = document.createElement('div');
+          myOffers.className = 'offers';
+          job.offers.forEach(o => {
+            const total = (o.amount * 1.05).toFixed(2);
+            const p = document.createElement('p');
+            p.textContent = o.user + ' offered ' + o.amount + ' (total with fee ' + total + ')';
+            myOffers.appendChild(p);
+          });
+          myJobDiv.appendChild(myOffers);
+          myJobsList.appendChild(myJobDiv);
+        }
+      });
+    }
+
+    document.getElementById('post-job-btn').onclick = () => {
+      if(!currentUser){ alert('Set your name first.'); return; }
+      const title = document.getElementById('job-title').value.trim();
+      const desc = document.getElementById('job-desc').value.trim();
+      const price = parseFloat(document.getElementById('job-price').value);
+      if(title && !isNaN(price)){
+        jobs.push({ id: Date.now(), title, description: desc, price, postedBy: currentUser, offers: [] });
+        saveJobs();
+        document.getElementById('job-title').value = '';
+        document.getElementById('job-desc').value = '';
+        document.getElementById('job-price').value = '';
+        render();
+      }
+    };
+
+    render();
   </script>
 </body>
 </html>
+
